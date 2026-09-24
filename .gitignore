@@ -20,3 +20,9 @@ Thumbs.db
 *.h5
 uploads/
 node_modules/
+
+*.keras
+*.pt
+*.h5
+uploads/
+node_modules/
