@@ -1,0 +1,22 @@
+# Large Uploads (Keep these on local disk, not in Git)
+/uploads/reports/
+/uploads/users/
+
+# Mobile Dependencies & Env
+/mobile/node_modules/
+/mobile/.expo/
+/mobile/dist/
+.env
+*.log
+
+# Web/Admin Temp
+.DS_Store
+Thumbs.db
+
+# AI Models (Too large for standard GitHub)
+/flask_api/trained_models/
+*.keras
+*.pt
+*.h5
+uploads/
+node_modules/
