@@ -1,10 +1,11 @@
 // RiceGuard API Service Layer
+import { apiFetch } from './api.config';
 import { ENDPOINTS } from './api.config';
 
 // ── Auth ──────────────────────────────────────────────────
 export const authService = {
     async login(contactNumber, password) {
-        const res = await fetch(ENDPOINTS.LOGIN, {
+        const res = await apiFetch(ENDPOINTS.LOGIN, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contact_number: contactNumber, password }),
@@ -13,7 +14,7 @@ export const authService = {
     },
 
     async register(userData) {
-        const res = await fetch(ENDPOINTS.REGISTER, {
+        const res = await apiFetch(ENDPOINTS.REGISTER, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(userData),
@@ -26,17 +27,17 @@ export const authService = {
 export const reportService = {
     async getReports(filters = {}) {
         const params = new URLSearchParams(filters).toString();
-        const res = await fetch(`${ENDPOINTS.REPORTS}?${params}`);
+        const res = await apiFetch(`${ENDPOINTS.REPORTS}?${params}`);
         return res.json();
     },
 
     async getReport(reportId) {
-        const res = await fetch(`${ENDPOINTS.REPORTS}?report_id=${reportId}`);
+        const res = await apiFetch(`${ENDPOINTS.REPORTS}?report_id=${reportId}`);
         return res.json();
     },
 
     async createReport(formData) {
-        const res = await fetch(ENDPOINTS.REPORTS, {
+        const res = await apiFetch(ENDPOINTS.REPORTS, {
             method: 'POST',
             body: formData, // FormData with images
         });
@@ -44,7 +45,7 @@ export const reportService = {
     },
 
     async updateStatus(reportId, status) {
-        const res = await fetch(ENDPOINTS.REPORTS, {
+        const res = await apiFetch(ENDPOINTS.REPORTS, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ report_id: reportId, status }),
@@ -78,12 +79,12 @@ const safeJsonParse = async (res) => {
 // ── AI Diagnosis ──────────────────────────────────────────
 export const aiService = {
     async getModels() {
-        const res = await fetch(ENDPOINTS.AI_MODELS);
+        const res = await apiFetch(ENDPOINTS.AI_MODELS);
         return safeJsonParse(res);
     },
 
     async getDiseases() {
-        const res = await fetch(ENDPOINTS.DISEASES);
+        const res = await apiFetch(ENDPOINTS.DISEASES);
         return safeJsonParse(res);
     },
 
@@ -97,7 +98,7 @@ export const aiService = {
         formData.append('model', modelName);
         if (reportId) formData.append('report_id', reportId.toString());
 
-        const res = await fetch(ENDPOINTS.AI_PREDICT, {
+        const res = await apiFetch(ENDPOINTS.AI_PREDICT, {
             method: 'POST',
             body: formData,
         });
@@ -113,7 +114,7 @@ export const aiService = {
         });
         if (reportId) formData.append('report_id', reportId.toString());
 
-        const res = await fetch(ENDPOINTS.AI_COMPARE, {
+        const res = await apiFetch(ENDPOINTS.AI_COMPARE, {
             method: 'POST',
             body: formData,
         });
@@ -129,7 +130,7 @@ export const aiService = {
         });
         if (reportId) formData.append('report_id', reportId.toString());
 
-        const res = await fetch(ENDPOINTS.AI_YOLO_PREDICT, {
+        const res = await apiFetch(ENDPOINTS.AI_YOLO_PREDICT, {
             method: 'POST',
             body: formData,
         });
@@ -137,7 +138,7 @@ export const aiService = {
     },
 
     async getDiagnosis(reportId) {
-        const res = await fetch(`${ENDPOINTS.DIAGNOSIS}?report_id=${reportId}`);
+        const res = await apiFetch(`${ENDPOINTS.DIAGNOSIS}?report_id=${reportId}`);
         return res.json();
     },
 };
@@ -146,12 +147,12 @@ export const aiService = {
 export const verificationService = {
     async getVerifications(reportId = null) {
         const params = reportId ? `?report_id=${reportId}` : '';
-        const res = await fetch(`${ENDPOINTS.VERIFICATION}${params}`);
+        const res = await apiFetch(`${ENDPOINTS.VERIFICATION}${params}`);
         return res.json();
     },
 
     async createVerification(data) {
-        const res = await fetch(ENDPOINTS.VERIFICATION, {
+        const res = await apiFetch(ENDPOINTS.VERIFICATION, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
@@ -164,17 +165,17 @@ export const verificationService = {
 export const treatmentService = {
     async getTreatments(diseaseId = null) {
         const params = diseaseId ? `?disease_id=${diseaseId}` : '';
-        const res = await fetch(`${ENDPOINTS.TREATMENTS}${params}`);
+        const res = await apiFetch(`${ENDPOINTS.TREATMENTS}${params}`);
         return res.json();
     },
 
     async getRecommendations(reportId) {
-        const res = await fetch(`${ENDPOINTS.TREATMENTS}?action=recommendations&report_id=${reportId}`);
+        const res = await apiFetch(`${ENDPOINTS.TREATMENTS}?action=recommendations&report_id=${reportId}`);
         return res.json();
     },
 
     async createRecommendation(data) {
-        const res = await fetch(ENDPOINTS.TREATMENTS, {
+        const res = await apiFetch(ENDPOINTS.TREATMENTS, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
@@ -187,7 +188,7 @@ export const treatmentService = {
 export const claimService = {
     async getClaims(filters = {}) {
         const params = new URLSearchParams(filters).toString();
-        const res = await fetch(`${ENDPOINTS.CLAIMS}?${params}`);
+        const res = await apiFetch(`${ENDPOINTS.CLAIMS}?${params}`);
         return res.json();
     },
 
@@ -209,7 +210,7 @@ export const claimService = {
             formData.append('image_types[]', img.type || 'Other');
         });
 
-        const res = await fetch(ENDPOINTS.CLAIMS, {
+        const res = await apiFetch(ENDPOINTS.CLAIMS, {
             method: 'POST',
             body: formData,
         });
@@ -221,7 +222,7 @@ export const claimService = {
 export const fieldVisitService = {
     async getVisits(filters = {}) {
         const params = new URLSearchParams(filters).toString();
-        const res = await fetch(`${ENDPOINTS.FIELD_VISITS}?${params}`);
+        const res = await apiFetch(`${ENDPOINTS.FIELD_VISITS}?${params}`);
         return res.json();
     },
 
@@ -242,7 +243,7 @@ export const fieldVisitService = {
             });
         });
 
-        const res = await fetch(ENDPOINTS.FIELD_VISITS, {
+        const res = await apiFetch(ENDPOINTS.FIELD_VISITS, {
             method: 'POST',
             body: formData,
         });
@@ -250,7 +251,7 @@ export const fieldVisitService = {
     },
 
     async updateVisit(data) {
-        const res = await fetch(ENDPOINTS.FIELD_VISITS, {
+        const res = await apiFetch(ENDPOINTS.FIELD_VISITS, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
@@ -262,12 +263,12 @@ export const fieldVisitService = {
 // ── Users ─────────────────────────────────────────────────
 export const userService = {
     async getUser(userId) {
-        const res = await fetch(`${ENDPOINTS.USERS}?user_id=${userId}`);
+        const res = await apiFetch(`${ENDPOINTS.USERS}?user_id=${userId}`);
         return res.json();
     },
 
     async updateUser(data) {
-        const res = await fetch(ENDPOINTS.USERS, {
+        const res = await apiFetch(ENDPOINTS.USERS, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
@@ -279,12 +280,12 @@ export const userService = {
 // ── Stats ─────────────────────────────────────────────────
 export const statsService = {
     async getOverview() {
-        const res = await fetch(`${ENDPOINTS.STATS}?action=overview`);
+        const res = await apiFetch(`${ENDPOINTS.STATS}?action=overview`);
         return res.json();
     },
 
     async getDiseases() {
-        const res = await fetch(`${ENDPOINTS.STATS}?action=diseases`);
+        const res = await apiFetch(`${ENDPOINTS.STATS}?action=diseases`);
         return res.json();
     },
 };

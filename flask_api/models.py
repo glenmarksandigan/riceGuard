@@ -23,7 +23,11 @@ MODELS_DIR   = os.path.join(os.path.dirname(__file__), 'trained_models')
 NUM_CLASSES  = 4
 CLASS_LABELS = ['Bacterial Leaf Blight', 'Healthy Rice Leaf', 'Leaf Blast', 'Sheath Blight']
 IMG_SIZE     = (224, 224)
-AVAILABLE_MODELS = ['mobilenetv2', 'densenet201', 'efficientnetv2s']
+AVAILABLE_MODELS = ['mobilenetv2', 'mobilenetv2_quantized', 'densenet201', 'efficientnetv2s']
+
+QUANTIZED_MODEL_FILES = {
+    'mobilenetv2_quantized': 'MobileNetV2_rice_disease_quantized.tflite',
+}
 
 if REAL_MODELS_AVAILABLE:
 
@@ -74,6 +78,70 @@ if REAL_MODELS_AVAILABLE:
         print(f"✅ [{model_key}] ready")
         return model
 
+    def _ensure_quantized_model(model_key: str) -> str:
+        if model_key not in QUANTIZED_MODEL_FILES:
+            raise ValueError(f"Quantized model not available for: {model_key}")
+
+        output_path = os.path.join(MODELS_DIR, QUANTIZED_MODEL_FILES[model_key])
+        if os.path.exists(output_path):
+            return output_path
+
+        base_key = model_key.replace('_quantized', '')
+        keras_model = _get_model(base_key)
+        converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        converter.target_spec.supported_types = [tf.float16]
+        tflite_bytes = converter.convert()
+
+        with open(output_path, 'wb') as f:
+            f.write(tflite_bytes)
+
+        print(f"✅ [{model_key}] quantized model saved to {output_path} ({os.path.getsize(output_path):,} bytes)")
+        return output_path
+
+    def _predict_tflite(model_key: str, image_bytes: bytes) -> dict:
+        if model_key not in QUANTIZED_MODEL_FILES:
+            raise ValueError(f"Unsupported quantized model: {model_key}")
+
+        tflite_path = _ensure_quantized_model(model_key)
+        interpreter = tf.lite.Interpreter(model_path=tflite_path)
+        interpreter.allocate_tensors()
+
+        input_detail = interpreter.get_input_details()[0]
+        output_detail = interpreter.get_output_details()[0]
+
+        img = tf.image.decode_image(image_bytes, channels=3, expand_animations=False)
+        img = tf.image.resize(img, IMG_SIZE)
+        img = tf.cast(img, tf.float32)
+        img = tf.expand_dims(img, 0)
+
+        interpreter.set_tensor(input_detail['index'], img.numpy())
+        interpreter.invoke()
+        predictions = interpreter.get_tensor(output_detail['index'])[0]
+
+        best_idx = int(np.argmax(predictions))
+        confidence = sanitize_float(predictions[best_idx], 0.0)
+        disease_name = CLASS_LABELS[best_idx]
+        top_preds = sorted([
+            {'disease_name': CLASS_LABELS[i], 'confidence': round(sanitize_float(s, 0.0) * 100, 2)}
+            for i, s in enumerate(predictions)
+        ], key=lambda x: x['confidence'], reverse=True)
+
+        disease_id_map = {
+            'Bacterial Leaf Blight': 1,
+            'Leaf Blast':            2,
+            'Sheath Blight':         4,
+            'Healthy Rice Leaf':     100,
+        }
+        return {
+            'disease_name': disease_name,
+            'disease_id': disease_id_map.get(disease_name, 0),
+            'confidence_score': round(confidence * 100, 2),
+            'model_version': f"{model_key}-quantized-v1.0",
+            'real_model_loaded': True,
+            'top_predictions': top_preds,
+        }
+
 
 def _preprocess_image(image_data: bytes):
     """
@@ -93,6 +161,7 @@ def get_available_models():
     """Return info on all available AI models (used by app.py endpoint)."""
     return {
         'mobilenetv2': {'name': 'MobileNetV2', 'description': 'Fast and lightweight.', 'accuracy': '89.24%'},
+        'mobilenetv2_quantized': {'name': 'MobileNetV2 Quantized', 'description': 'Smaller quantized model that reduces memory and startup time for deployment.', 'accuracy': '~89%'},
         'densenet201': {'name': 'DenseNet201', 'description': 'Deep and accurate.', 'accuracy': '91.60%'},
         'efficientnetv2s': {'name': 'EfficientNetV2S', 'description': 'Best balance of speed and accuracy.', 'accuracy': '93.70%'},
     }
@@ -119,6 +188,11 @@ def predict(model_key: str, image_bytes: bytes) -> dict:
 
     if REAL_MODELS_AVAILABLE:
         try:
+            if model_key in QUANTIZED_MODEL_FILES:
+                result = _predict_tflite(model_key, image_bytes)
+                result['inference_time_ms'] = int((time.time() - start_time) * 1000)
+                return result
+
             model       = _get_model(model_key)
             img_tensor  = _preprocess_image(image_bytes)
             raw         = model(img_tensor, training=False)

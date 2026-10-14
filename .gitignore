@@ -2,6 +2,11 @@
 /uploads/reports/
 /uploads/users/
 
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
 # Mobile Dependencies & Env
 /mobile/node_modules/
 /mobile/.expo/
@@ -13,16 +18,13 @@
 .DS_Store
 Thumbs.db
 
-# AI Models (Too large for standard GitHub)
-/flask_api/trained_models/
+# AI Models — exclude large originals, allow quantized versions
 *.keras
-*.pt
 *.h5
-uploads/
-node_modules/
+# Allow quantized TFLite models and YOLO weights (all under 100 MB)
+!*.tflite
+!*.pt
 
-*.keras
-*.pt
-*.h5
 uploads/
 node_modules/
+flask_api/venv/

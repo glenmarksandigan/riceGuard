@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app import app
 from yolo_models import _should_accept_leaf_detection
+from models import get_available_models
 
 
 class YoloEndpointTests(unittest.TestCase):
@@ -51,6 +52,12 @@ class YoloEndpointTests(unittest.TestCase):
             box_area_ratio=0.20,
             image_bytes=b'fake-image-bytes'
         ))
+
+    def test_quantized_model_option_is_exposed(self):
+        models = get_available_models()
+        self.assertIn('mobilenetv2', models)
+        self.assertIn('mobilenetv2_quantized', models)
+        self.assertIn('quantized', models['mobilenetv2_quantized']['description'].lower())
 
 
 if __name__ == '__main__':

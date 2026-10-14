@@ -70,4 +70,15 @@ export const ENDPOINTS = {
     AI_YOLO_PREDICT: `${API_CONFIG.FLASK_BASE_URL}/predict/yolo`,
     AI_COMPARE: `${API_CONFIG.FLASK_BASE_URL}/predict/compare`,
     AI_MODELS: `${API_CONFIG.FLASK_BASE_URL}/models`,
+    
+};
+// Wrapper that automatically bypasses the localtunnel warning page
+export const apiFetch = (url, options = {}) => {
+    return fetch(url, {
+        ...options,
+        headers: {
+            ...options.headers,
+            'Bypass-Tunnel-Reminder': 'true',
+        },
+    });
 };
